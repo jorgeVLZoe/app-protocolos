@@ -1,0 +1,8 @@
+streamlit
+pandas
+openpyxl
+Pillow
+SQLAlchemy
+psycopg2-binary
+boto3
+streamlit-authenticator
