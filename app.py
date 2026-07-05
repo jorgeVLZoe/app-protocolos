@@ -167,6 +167,7 @@ def load_db():
             df = pd.read_sql("SELECT * FROM protocolos", conn)
         return df
     except Exception as e:
+        st.error(f"Error grave conectando a la base de datos: {e}")
         return pd.DataFrame(columns=[
             "Correlativo", "Tipo_Protocolo", "Fecha", "Proyecto", "Tag", "Contratista", 
             "Tipo_Varilla", "Longitud", "Check1", "Check2", "Check3"
