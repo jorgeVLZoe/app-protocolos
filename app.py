@@ -2317,11 +2317,24 @@ with tab3:
                     df_nc_export.to_excel(writer, sheet_name="Seguimiento NCs", index=False)
             
             output.seek(0)
-            st.download_button(
-                label="📥 Exportar Resumen de Dashboard a Excel",
-                data=output,
-                file_name=f"Dashboard_Gerencial_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                st.download_button(
+                    label="📥 Exportar Excel de Datos",
+                    data=output,
+                    file_name=f"Dashboard_Gerencial_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+            
+            with col_btn2:
+                pdf_data = generar_pdf_gerencial(total_protocolos, ftpr_pct, promedio_diario, df_ranking, defectos)
+                st.download_button(
+                    label="📄 Generar Reporte de Gerencia (PDF)",
+                    data=pdf_data,
+                    file_name=f"Reporte_Gerencial_Las_Bambas_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
     else:
         st.info("La base de datos está vacía. Registre un protocolo primero en la otra pestaña.")
