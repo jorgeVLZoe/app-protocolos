@@ -1,4 +1,8 @@
 import streamlit as st
+import plotly.express as px
+from fpdf import FPDF
+import tempfile
+
 import openpyxl
 import pandas as pd
 import os
@@ -323,6 +327,11 @@ with tab1:
         def_equipo = str(last_row.get("Equipo_Prueba", ""))
         def_modelo = str(last_row.get("Modelo", ""))
         def_serie = str(last_row.get("N_Serie", ""))
+        def_marca = str(last_row.get("Marca", ""))
+        def_facility = str(last_row.get("Facility", "0840 - Geology Facilities"))
+        def_lugar = str(last_row.get("Lugar", ""))
+        def_sistema = str(last_row.get("Sistema", "No Aplica"))
+        def_subsistema = str(last_row.get("SubSistema", "No Aplica"))
     else:
         def_proyecto = "CONSTRUCCIÓN DE INFRAESTRUCTURA DE LAS NUEVAS FACILIDADES DE GEOLOGÍA - FASE 6A Y 6B"
         def_cliente = "MINERA LAS BAMBAS S.A."
@@ -332,14 +341,19 @@ with tab1:
         def_equipo = "Telurómetro Megger"
         def_modelo = "DET4TC2"
         def_serie = "SN-102938"
+        def_marca = "MEGABRAS"
+        def_facility = "0840 - Geology Facilities"
+        def_lugar = ""
+        def_sistema = "No Aplica"
+        def_subsistema = "No Aplica"
         
     # Variables de compatibilidad para los nuevos formatos
     default_proyecto = def_proyecto
     default_cliente = def_cliente
     default_contratista = def_contratista
     default_contrato = def_contrato
-    default_lugar = ""
-    default_facility = "0840 - Geology Facilities"
+    default_lugar = def_lugar
+    default_facility = def_facility
     
     if protocolo_seleccionado == "Inspección de Pozo a Tierra (PTC-IPT)":
         default_correlativo = generate_next_correlativo(None, "PTC-IPT")
@@ -353,17 +367,17 @@ with tab1:
                 fecha = st.date_input("Fecha de Ejecución")
                 proyecto = st.text_input("Proyecto", value=def_proyecto)
                 cliente = st.text_input("Cliente", value=def_cliente)
-                lugar = st.text_input("Lugar/Área")
+                lugar = st.text_input("Lugar/Área", value=def_lugar)
                 contratista = st.text_input("Contratista", value=def_contratista)
             with col2:
                 contrato = st.text_input("Contrato N°", value=def_contrato)
                 plano = st.text_input("Plano de Referencia")
-                facility = st.text_input("Facility code", value="0840 - Geology Facilities")
+                facility = st.text_input("Facility code", value=def_facility)
                 tag = st.text_input("Tag del equipo")
                 disciplina = st.text_input("Disciplina", value=def_disciplina)
             with col3:
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura")
                 hoja = st.text_input("Hoja", value="1 de 3")
             
@@ -375,6 +389,18 @@ with tab1:
                 seccion_varilla = st.text_input("Sección de Varilla Vertical", value='3/4"')
             with col_m3:
                 longitud_varilla = st.text_input("Longitud de Varilla (m)", value="2.40 MT")
+                
+            st.markdown("**Pozo a Tierra Horizontal (Opcional)**")
+            col_h1, col_h2, col_h3 = st.columns(3)
+            with col_h1:
+                tipo_varilla_h1 = st.text_input("Tipo Varilla H1", value="")
+                tipo_varilla_h2 = st.text_input("Tipo Varilla H2", value="")
+            with col_h2:
+                seccion_varilla_h1 = st.text_input("Sección Varilla H1", value="")
+                seccion_varilla_h2 = st.text_input("Sección Varilla H2", value="")
+            with col_h3:
+                longitud_h1 = st.text_input("Longitud H1", value="")
+                longitud_h2 = st.text_input("Longitud H2", value="")
                 
             col_c1, col_c2 = st.columns(2)
             with col_c1:
@@ -423,6 +449,12 @@ with tab1:
                 "Tipo_Varilla": tipo_varilla,
                 "Seccion_Varilla": seccion_varilla,
                 "Longitud": longitud_varilla,
+                "Tipo_Varilla_H1": tipo_varilla_h1,
+                "Seccion_Varilla_H1": seccion_varilla_h1,
+                "Longitud_H1": longitud_h1,
+                "Tipo_Varilla_H2": tipo_varilla_h2,
+                "Seccion_Varilla_H2": seccion_varilla_h2,
+                "Longitud_H2": longitud_h2,
                 "Conector": conector,
                 "Caja_Reg": caja_reg,
                 "Check1": check1,
@@ -475,28 +507,28 @@ with tab1:
                 fecha = st.date_input("Fecha de Ejecución")
                 proyecto = st.text_input("Proyecto", value=def_proyecto)
                 cliente = st.text_input("Cliente", value=def_cliente)
-                lugar = st.text_input("Lugar / Área")
+                lugar = st.text_input("Lugar / Área", value=def_lugar)
                 contratista = st.text_input("Contratista", value=def_contratista)
             with col2:
                 contrato = st.text_input("Contrato N°", value=def_contrato)
                 plano = st.text_input("Plano de Referencia")
-                facility = st.text_input("Facility code", value="0840 - Geology Facilities")
+                facility = st.text_input("Facility code", value=def_facility)
                 tag = st.text_input("Tag del equipo")
                 disciplina = st.text_input("Disciplina", value=def_disciplina)
             with col3:
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub Sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub Sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura")
                 hoja = st.text_input("Hoja", value="1 de 3")
             
             st.subheader("🛠️ 2. Equipos de Medición")
             col_eq1, col_eq2 = st.columns(2)
             with col_eq1:
-                equipo_prueba = st.text_input("Equipo de Prueba", value="TELUROMETRO")
-                marca = st.text_input("Marca", value="MEGABRAS")
+                equipo_prueba = st.text_input("Equipo de Prueba", value=def_equipo)
+                marca = st.text_input("Marca", value=def_marca)
             with col_eq2:
-                modelo = st.text_input("Modelo", value="MTD20KWR")
-                n_serie = st.text_input("Número de Serie", value="25L0108")
+                modelo = st.text_input("Modelo", value=def_modelo)
+                n_serie = st.text_input("Número de Serie", value=def_serie)
                 fecha_calib = st.date_input("Fecha de Calibración", value=datetime.today())
                 
             st.subheader("🌤️ 3. Datos Ambientales")
@@ -602,13 +634,13 @@ with tab1:
                         st.error(f"❌ ERROR: {ve}")
 
     elif protocolo_seleccionado == "Inspección Sistema de Puesta a Tierra (PTC-IST)":
-        if "current_correlativo_ist" not in st.session_state:
-            st.session_state.current_correlativo_ist = generate_next_correlativo("", "PTC-IST")
+        default_correlativo_ist = generate_next_correlativo(None, "PTC-IST")
             
-        st.markdown(f"### 📋 PTC-IST | Siguiente Correlativo: **{st.session_state.current_correlativo_ist}**")
+        st.markdown(f"### 📋 PTC-IST | Siguiente Correlativo: **{default_correlativo_ist}**")
         
         with st.form("form_ist", clear_on_submit=True):
             st.subheader("📝 1. Datos Generales")
+            correlativo_input = st.text_input("Protocolo N° (Autogenerado / Editable)", value=default_correlativo_ist)
             col1, col2, col3 = st.columns(3)
             with col1:
                 fecha = st.date_input("Fecha de Ejecución", value=datetime.today())
@@ -623,8 +655,8 @@ with tab1:
                 disciplina = st.text_input("Disciplina", value="0430 - Eléctrica")
             with col3:
                 tag = st.text_input("Tag del Equipo", value="No Aplica")
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura", value="No Aplica")
                 hoja = st.text_input("Hoja", value="1 de 4")
                 
@@ -661,7 +693,6 @@ with tab1:
             submitted_ist = st.form_submit_button("💾 Guardar Protocolo en Base de Datos", use_container_width=True)
             
             if submitted_ist:
-                correlativo_input = st.session_state.current_correlativo_ist
                 if len(fotos_cargadas_ist) > 3:
                     st.error("❌ Solo puedes subir hasta 3 fotos.")
                     st.stop()
@@ -684,7 +715,6 @@ with tab1:
                 
                 try:
                     correlativo = save_to_db(data)
-                    st.session_state.current_correlativo_ist = generate_next_correlativo(correlativo, "PTC-IST")
                     st.success(f"✅ ¡Guardado con éxito! {correlativo}")
                     st.rerun()
                 except PermissionError:
@@ -706,13 +736,13 @@ with tab1:
                         st.error(f"❌ ERROR: {ve}")
 
     elif protocolo_seleccionado == "Tratamiento de Malla (PTC-RTM)":
-        if "current_correlativo_rtm" not in st.session_state:
-            st.session_state.current_correlativo_rtm = generate_next_correlativo("", "PTC-RTM")
+        default_correlativo_rtm = generate_next_correlativo(None, "PTC-RTM")
             
-        st.markdown(f"### 📋 PTC-RTM | Siguiente Correlativo: **{st.session_state.current_correlativo_rtm}**")
+        st.markdown(f"### 📋 PTC-RTM | Siguiente Correlativo: **{default_correlativo_rtm}**")
         
         with st.form("form_rtm", clear_on_submit=True):
             st.subheader("📝 1. Datos Generales")
+            correlativo_input = st.text_input("Protocolo N° (Autogenerado / Editable)", value=default_correlativo_rtm)
             col1, col2, col3 = st.columns(3)
             with col1:
                 fecha = st.date_input("Fecha de Ejecución", value=datetime.today())
@@ -727,8 +757,8 @@ with tab1:
                 disciplina = st.text_input("Disciplina", value="0430 - Eléctrica")
             with col3:
                 tag = st.text_input("Tag del Equipo", value="No Aplica")
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura", value="Malla a Tierra Principal")
                 hoja = st.text_input("Hoja", value="1 de 3")
                 
@@ -777,7 +807,6 @@ with tab1:
             submitted_rtm = st.form_submit_button("💾 Guardar Protocolo en Base de Datos", use_container_width=True)
             
             if submitted_rtm:
-                correlativo_input = st.session_state.current_correlativo_rtm
                 if len(fotos_cargadas_rtm) > 3:
                     st.error("❌ Solo puedes subir hasta 3 fotos.")
                     st.stop()
@@ -802,7 +831,6 @@ with tab1:
                 
                 try:
                     correlativo = save_to_db(data)
-                    st.session_state.current_correlativo_rtm = generate_next_correlativo(correlativo, "PTC-RTM")
                     st.success(f"✅ ¡Guardado con éxito! {correlativo}")
                     st.rerun()
                 except PermissionError:
@@ -824,13 +852,13 @@ with tab1:
                         st.error(f"❌ ERROR: {ve}")
 
     elif protocolo_seleccionado == "Tendido de Cable de Puesta a Tierra (PTC-TCA)":
-        if "current_correlativo_tca" not in st.session_state:
-            st.session_state.current_correlativo_tca = generate_next_correlativo("", "PTC-TCA")
+        default_correlativo_tca = generate_next_correlativo(None, "PTC-TCA")
             
-        st.markdown(f"### 📋 PTC-TCA | Siguiente Correlativo: **{st.session_state.current_correlativo_tca}**")
+        st.markdown(f"### 📋 PTC-TCA | Siguiente Correlativo: **{default_correlativo_tca}**")
         
         with st.form("form_tca", clear_on_submit=True):
             st.subheader("📝 1. Datos Generales")
+            correlativo_input = st.text_input("Protocolo N° (Autogenerado / Editable)", value=default_correlativo_tca)
             col1, col2, col3 = st.columns(3)
             with col1:
                 fecha = st.date_input("Fecha de Ejecución", value=datetime.today())
@@ -845,8 +873,8 @@ with tab1:
                 disciplina = st.text_input("Disciplina", value="0430 - Eléctrica")
             with col3:
                 tag = st.text_input("Tag del Equipo", value="No Aplica")
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura", value="Malla de Tierra de Bancoductos")
                 hoja = st.text_input("Hoja", value="1 de 3")
                 
@@ -904,7 +932,6 @@ with tab1:
             submitted_tca = st.form_submit_button("💾 Guardar Protocolo en Base de Datos", use_container_width=True)
             
             if submitted_tca:
-                correlativo_input = st.session_state.current_correlativo_tca
                 if len(fotos_cargadas_tca) > 3:
                     st.error("❌ Solo puedes subir hasta 3 fotos.")
                     st.stop()
@@ -931,7 +958,6 @@ with tab1:
                 
                 try:
                     correlativo = save_to_db(data)
-                    st.session_state.current_correlativo_tca = generate_next_correlativo(correlativo, "PTC-TCA")
                     st.success(f"✅ ¡Guardado con éxito! {correlativo}")
                     st.rerun()
                 except PermissionError:
@@ -953,13 +979,13 @@ with tab1:
                         st.error(f"❌ ERROR: {ve}")
 
     elif protocolo_seleccionado == "Medición de Resistividad del Terreno (PTC-MRT)":
-        if "current_correlativo_mrt" not in st.session_state:
-            st.session_state.current_correlativo_mrt = generate_next_correlativo("", "PTC-MRT")
+        default_correlativo_mrt = generate_next_correlativo(None, "PTC-MRT")
             
-        st.markdown(f"### 📋 PTC-MRT | Siguiente Correlativo: **{st.session_state.current_correlativo_mrt}**")
+        st.markdown(f"### 📋 PTC-MRT | Siguiente Correlativo: **{default_correlativo_mrt}**")
         
         with st.form("form_mrt", clear_on_submit=True):
             st.subheader("📝 1. Datos Generales")
+            correlativo_input = st.text_input("Protocolo N° (Autogenerado / Editable)", value=default_correlativo_mrt)
             col1, col2, col3 = st.columns(3)
             with col1:
                 fecha = st.date_input("Fecha de Ejecución", value=datetime.today())
@@ -974,8 +1000,8 @@ with tab1:
                 disciplina = st.text_input("Disciplina", value="0430 - Eléctrica")
             with col3:
                 tag = st.text_input("Tag del Equipo", value="No Aplica")
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura", value="No Aplica")
                 hoja = st.text_input("Hoja", value="1 de 4")
                 
@@ -1014,7 +1040,6 @@ with tab1:
             submitted_mrt = st.form_submit_button("💾 Guardar Protocolo en Base de Datos", use_container_width=True)
             
             if submitted_mrt:
-                correlativo_input = st.session_state.current_correlativo_mrt
                 if len(fotos_cargadas_mrt) > 3:
                     st.error("❌ Solo puedes subir hasta 3 fotos.")
                     st.stop()
@@ -1037,7 +1062,6 @@ with tab1:
                 
                 try:
                     correlativo = save_to_db(data)
-                    st.session_state.current_correlativo_mrt = generate_next_correlativo(correlativo, "PTC-MRT")
                     st.success(f"✅ ¡Guardado con éxito! {correlativo}")
                     st.rerun()
                 except PermissionError:
@@ -1059,13 +1083,13 @@ with tab1:
                         st.error(f"❌ ERROR: {ve}")
 
     elif protocolo_seleccionado == "Recepción Materiales (PTC-RME)":
-        if "current_correlativo_rme" not in st.session_state:
-            st.session_state.current_correlativo_rme = generate_next_correlativo("", "PTC-RME")
+        default_correlativo_rme = generate_next_correlativo(None, "PTC-RME")
             
-        st.markdown(f"### 📋 PTC-RME | Siguiente Correlativo: **{st.session_state.current_correlativo_rme}**")
+        st.markdown(f"### 📋 PTC-RME | Siguiente Correlativo: **{default_correlativo_rme}**")
         
         with st.form("form_rme", clear_on_submit=True):
             st.subheader("📝 1. Datos Generales")
+            correlativo_input = st.text_input("Protocolo N° (Autogenerado / Editable)", value=default_correlativo_rme)
             col1, col2, col3 = st.columns(3)
             with col1:
                 fecha = st.date_input("Fecha de Ejecución", value=datetime.today())
@@ -1080,8 +1104,8 @@ with tab1:
                 disciplina = st.text_input("Disciplina", value="0400 - General")
             with col3:
                 tag = st.text_input("Tag del Equipo", value="No Aplica")
-                sistema = st.text_input("Sistema", value="No Aplica")
-                subsistema = st.text_input("Sub sistema", value="No Aplica")
+                sistema = st.text_input("Sistema", value=def_sistema)
+                subsistema = st.text_input("Sub sistema", value=def_subsistema)
                 estructura = st.text_input("Estructura", value="No Aplica")
                 hoja = st.text_input("Hoja", value="1 de 16")
                 
@@ -1134,7 +1158,6 @@ with tab1:
             submitted_rme = st.form_submit_button("💾 Guardar Protocolo en Base de Datos", use_container_width=True)
             
             if submitted_rme:
-                correlativo_input = st.session_state.current_correlativo_rme
                 if len(fotos_cargadas_rme) > 3:
                     st.error("❌ Solo puedes subir hasta 3 fotos.")
                     st.stop()
@@ -1159,7 +1182,6 @@ with tab1:
                 
                 try:
                     correlativo = save_to_db(data)
-                    st.session_state.current_correlativo_rme = generate_next_correlativo(correlativo, "PTC-RME")
                     st.success(f"✅ ¡Guardado con éxito! {correlativo}")
                     st.rerun()
                 except PermissionError:
@@ -1266,6 +1288,12 @@ with tab2:
                             set_value(ws, 'C14', row.get("Tipo_Varilla", ""))
                             set_value(ws, 'I14', row.get("Seccion_Varilla", ""))
                             set_value(ws, 'N14', row.get("Longitud", ""))
+                            set_value(ws, 'C16', row.get("Tipo_Varilla_H1", ""))
+                            set_value(ws, 'I16', row.get("Seccion_Varilla_H1", ""))
+                            set_value(ws, 'N16', row.get("Longitud_H1", ""))
+                            set_value(ws, 'C17', row.get("Tipo_Varilla_H2", ""))
+                            set_value(ws, 'I17', row.get("Seccion_Varilla_H2", ""))
+                            set_value(ws, 'N17', row.get("Longitud_H2", ""))
                             set_value(ws, 'D18', row.get("Conector", ""))
                             set_value(ws, 'L18', row.get("Caja_Reg", ""))
                             
@@ -1993,6 +2021,48 @@ with tab2:
     else:
         st.info("La base de datos está vacía. Registre un protocolo primero en la otra pestaña.")
 
+
+def generar_pdf_gerencial(total_protocolos, ftpr_pct, promedio_diario, df_ranking, defectos):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="Proyecto Las Bambas - Reporte Ejecutivo QA/QC", ln=True, align='C')
+    pdf.set_font("Arial", size=12)
+    pdf.ln(5)
+    pdf.cell(200, 10, txt=f"Total Protocolos Liberados: {total_protocolos}", ln=True)
+    pdf.cell(200, 10, txt=f"First Time Pass Rate (FTPR): {ftpr_pct:.1f}%", ln=True)
+    pdf.cell(200, 10, txt=f"Promedio Diario: {promedio_diario:.1f} protocolos/dia", ln=True)
+    
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Ranking de Contratistas", ln=True)
+    pdf.set_font("Arial", size=10)
+    for idx, row in df_ranking.iterrows():
+        # Clean special chars to avoid latin-1 errors
+        contr = str(row['Contratista']).encode('latin-1', 'replace').decode('latin-1')
+        pdf.cell(200, 8, txt=f"- {contr} | Protocolos: {row['Total Protocolos']} | FTPR: {row['% FTPR']:.1f}%", ln=True)
+    
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(200, 10, txt="Top No Conformidades Registradas", ln=True)
+    pdf.set_font("Arial", size=10)
+    if not defectos:
+         pdf.cell(200, 8, txt="Sin No Conformidades registradas en el periodo.", ln=True)
+    else:
+        from collections import Counter
+        conteos = Counter(defectos)
+        for defecto, cantidad in conteos.most_common():
+             d_text = str(defecto).encode('latin-1', 'replace').decode('latin-1')
+             pdf.cell(200, 8, txt=f"- {cantidad} fallos: {d_text}", ln=True)
+             
+    tmp = tempfile.mktemp(suffix=".pdf")
+    pdf.output(tmp)
+    with open(tmp, "rb") as f:
+        data = f.read()
+    import os
+    os.remove(tmp)
+    return data
+
 with tab3:
     st.markdown("## 📊 Panel de Control (Gerencia)")
     st.markdown("Vista general del progreso de los protocolos y calidad (QA/QC).")
@@ -2140,7 +2210,8 @@ with tab3:
                 st.markdown("### Desglose por Tipo")
                 conteo_tipo = df_dash["Tipo_Protocolo"].value_counts().reset_index()
                 conteo_tipo.columns = ["Tipo", "Cantidad"]
-                st.bar_chart(conteo_tipo, x="Tipo", y="Cantidad")
+                fig_tipo = px.bar(conteo_tipo, x="Tipo", y="Cantidad", title="Protocolos por Tipo", color="Tipo", template="plotly_white")
+                st.plotly_chart(fig_tipo, use_container_width=True)
             
             with col_c2:
                 st.markdown("### Tendencia Temporal")
@@ -2155,7 +2226,9 @@ with tab3:
                 conteo_fecha = df_dash["Periodo"].value_counts().sort_index().reset_index()
                 conteo_fecha.columns = ["Periodo", "Cantidad"]
                 conteo_fecha["Periodo"] = conteo_fecha["Periodo"].astype(str)
-                st.line_chart(conteo_fecha, x="Periodo", y="Cantidad")
+                fig_line = px.line(conteo_fecha, x="Periodo", y="Cantidad", title="Tendencia de Ejecución", markers=True, template="plotly_white")
+                fig_line.update_traces(line_color="#e63946", line_width=3, marker=dict(size=8))
+                st.plotly_chart(fig_line, use_container_width=True)
 
             st.markdown("---")
             
@@ -2174,7 +2247,9 @@ with tab3:
                 if defectos:
                     df_defectos = pd.Series(defectos).value_counts().reset_index()
                     df_defectos.columns = ["Defecto", "Cantidad"]
-                    st.bar_chart(df_defectos, x="Defecto", y="Cantidad")
+                    fig_def = px.bar(df_defectos, x="Cantidad", y="Defecto", orientation='h', title="Top No Conformidades", template="plotly_white", color_discrete_sequence=["#d62828"])
+                    fig_def.update_layout(yaxis={'categoryorder':'total ascending'})
+                    st.plotly_chart(fig_def, use_container_width=True)
                 else:
                     st.success("¡Excelente! No se registraron defectos.")
 
